@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraftsvc 
+  labels:
+    name: minecraftsvc
+spec:
+  ports:
+  - name: mainendpoint
+    port: 25565
+    protocol: TCP
+    targetPort: main
+  - name: rconendpoint
+    port: 25575
+    protocol: TCP
+    targetPort: rcon    
+  type: LoadBalancer
+  selector:
+    name: minecraft
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: minecraft
+  labels:
+    name: minecraft
+spec:
+  replicas: 1
+  selector:
+    name: minecraft
+  template:
+    metadata:
+      name: minecraft
+      labels:
+        name: minecraft
+        instance: rod
+    spec:
+      containers:
+      - name: minecraft
+        image: openhack/minecraft-server
+        env:
+        - name: EULA
+          value: "TRUE"
+        - name: VERSION
+          value: "1.13.2"
+        ports:
+        - containerPort: 25565
+          name: main
+        - containerPort: 25575
+          name: rcon
+        volumeMounts:
+        - mountPath: "/data"
+          name: volume
+      volumes:
+      - name: volume
+        persistentVolumeClaim:
+          claimName: azurefile
